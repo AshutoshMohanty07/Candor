@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__, static_folder="dist", static_url_path="")
+app = Flask(__name__, static_folder="../dist", static_url_path="")
 CORS(app)  # allow the frontend (different origin during local dev) to call this API
 
 # ---------------------------------------------------------------------------
@@ -298,4 +298,5 @@ def serve_frontend(path):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    debug = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(host="0.0.0.0", port=port, debug=debug)
