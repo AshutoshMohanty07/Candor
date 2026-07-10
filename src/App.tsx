@@ -157,7 +157,7 @@ function OwnerApp() {
         />
       )}
       {screen === "share" && <Share username={username} />}
-      {screen === "insights" && <Insights messages={messages} />}
+      {screen === "insights" && <Insights username={username} />}
       {screen === "settings" && <Settings onNavigate={navigateTo} />}
 
       {isMainApp && screen !== "reply" && (
