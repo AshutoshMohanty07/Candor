@@ -125,7 +125,7 @@ export default function Inbox({ username, messages, onReply, onIgnore }: Props) 
             </h1>
             {username && (
               <p className="text-sm font-medium mt-1" style={{ color: "var(--muted-foreground)" }}>
-                candor.app/{username}
+                {window.location.origin}/{username}
               </p>
             )}
           </div>
