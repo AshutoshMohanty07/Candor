@@ -28,8 +28,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__, static_folder="../dist", static_url_path="")
+app = Flask(__name__, static_folder=None)
 CORS(app)  # allow the frontend (different origin during local dev) to call this API
+
+# Absolute path to the built React app — works regardless of working directory
+DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../dist")
 
 # ---------------------------------------------------------------------------
 # Rate limiting — keyed by client IP
@@ -367,13 +370,21 @@ def get_insights(username):
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def serve_frontend(path):
-    """In production, `npm run build` outputs static files into dist/.
-    This lets one Flask app + one Replit URL serve both the API and the
-    React app, which keeps the whole project a single live link."""
-    full_path = os.path.join(app.static_folder, path)
-    if path and os.path.exists(full_path):
-        return send_from_directory(app.static_folder, path)
-    return send_from_directory(app.static_folder, "index.html")
+    """Serve the built React app for every non-API path.
+
+    Flask's built-in static handler is disabled (static_folder=None) because
+    with static_url_path="" it claims the root and returns a real 404 for any
+    path not found in dist/ — bypassing this catch-all entirely and breaking
+    React Router's client-side routes (e.g. /<username>).
+
+    Instead we handle all static serving here:
+      - real asset files (dist/assets/*, dist/index.html, etc.) → serve the file
+      - everything else (React routes like /ashutosh) → serve index.html
+    """
+    full_path = os.path.join(DIST_DIR, path)
+    if path and os.path.isfile(full_path):
+        return send_from_directory(DIST_DIR, path)
+    return send_from_directory(DIST_DIR, "index.html")
 
 
 if __name__ == "__main__":
