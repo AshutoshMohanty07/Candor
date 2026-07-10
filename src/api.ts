@@ -7,10 +7,19 @@
 
 const BASE = import.meta.env.VITE_API_URL || "";
 
+// The owner token is stored in localStorage after signup and sent on every
+// authenticated request as X-Owner-Token. The backend validates it and
+// rejects requests where the token doesn't match the resource being accessed.
+export const STORAGE_TOKEN_KEY = "candor_owner_token";
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem(STORAGE_TOKEN_KEY);
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["X-Owner-Token"] = token;
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers: { ...headers, ...(options.headers as Record<string, string> | undefined) },
   });
   const data = await res.json();
   if (!res.ok) {
@@ -30,8 +39,9 @@ export const api = {
   checkUserExists: (username: string) =>
     request<{ exists: boolean }>(`/api/users/${username}`),
 
+  // Returns username + owner_token (only returned once — store it immediately)
   createUser: (username: string) =>
-    request<{ username: string }>(`/api/users`, {
+    request<{ username: string; owner_token: string }>(`/api/users`, {
       method: "POST",
       body: JSON.stringify({ username }),
     }),

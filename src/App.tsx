@@ -9,7 +9,7 @@ import Insights from "./screens/Insights";
 import Settings from "./screens/Settings";
 import SendMessage from "./screens/SendMessage";
 import BottomNav from "./components/BottomNav";
-import { api, type ApiMessage } from "./api";
+import { api, STORAGE_TOKEN_KEY, type ApiMessage } from "./api";
 
 export type Screen =
   | "onboarding"
@@ -94,8 +94,9 @@ function OwnerApp() {
 
   const handleSignupDone = async (uname: string) => {
     try {
-      await api.createUser(uname);
+      const res = await api.createUser(uname);
       localStorage.setItem(STORAGE_KEY, uname);
+      localStorage.setItem(STORAGE_TOKEN_KEY, res.owner_token);
       setUsername(uname);
       setScreen("inbox");
       setActiveTab("inbox");

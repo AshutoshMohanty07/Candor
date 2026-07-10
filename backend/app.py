@@ -14,18 +14,35 @@ in the frontend project.
 """
 
 import os
+import secrets
 from datetime import datetime, timedelta
+from functools import wraps
 
 import mysql.connector
 from mysql.connector import pooling
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, g, request, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__, static_folder="../dist", static_url_path="")
 CORS(app)  # allow the frontend (different origin during local dev) to call this API
+
+# ---------------------------------------------------------------------------
+# Rate limiting — keyed by client IP
+# ---------------------------------------------------------------------------
+# Default limits apply globally; stricter limits can be added per route.
+# Uses in-memory storage (fine for a single-process Replit deployment).
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
 
 # ---------------------------------------------------------------------------
 # Database connection pool
@@ -55,6 +72,36 @@ pool = pooling.MySQLConnectionPool(pool_name="candor_pool", pool_size=5, **DB_CO
 
 def get_conn():
     return pool.get_connection()
+
+
+# ---------------------------------------------------------------------------
+# Auth — owner token
+# ---------------------------------------------------------------------------
+# Each user gets a random token at signup (returned once, stored client-side
+# in localStorage). Protected routes require this token in X-Owner-Token.
+# Because the username is public (it's the shareable link), we can't use it
+# as a credential — the token is the secret proof of ownership.
+
+def require_owner(f):
+    """Decorator that validates X-Owner-Token and sets g.owner = {user_id, username}."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get("X-Owner-Token", "").strip()
+        if not token:
+            return jsonify({"error": "Authentication required."}), 401
+        conn = get_conn()
+        try:
+            cur = conn.cursor(dictionary=True)
+            cur.execute(
+                "SELECT user_id, username FROM users WHERE owner_token = %s", (token,)
+            )
+            g.owner = cur.fetchone()
+        finally:
+            conn.close()
+        if not g.owner:
+            return jsonify({"error": "Invalid token."}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 
 # ---------------------------------------------------------------------------
@@ -96,23 +143,29 @@ def check_user(username):
 
 @app.route("/api/users", methods=["POST"])
 def create_user():
-    """Creates a new user during signup. Returns 409 if the username is
-    already taken, so the frontend can show a clear error."""
+    """Creates a new user during signup. Generates a random owner_token,
+    returns it once in the response — the client must store it in localStorage.
+    Returns 409 if the username is already taken."""
     data = request.get_json(force=True)
     username = clean_username(data.get("username", ""))
 
     if len(username) < 3:
         return jsonify({"error": "Username must be at least 3 characters."}), 400
 
+    token = secrets.token_urlsafe(32)
+
     conn = get_conn()
     try:
         cur = conn.cursor()
         try:
-            cur.execute("INSERT INTO users (username) VALUES (%s)", (username,))
+            cur.execute(
+                "INSERT INTO users (username, owner_token) VALUES (%s, %s)",
+                (username, token),
+            )
             conn.commit()
         except mysql.connector.errors.IntegrityError:
             return jsonify({"error": "That username is already taken."}), 409
-        return jsonify({"username": username}), 201
+        return jsonify({"username": username, "owner_token": token}), 201
     finally:
         conn.close()
 
@@ -122,9 +175,11 @@ def create_user():
 # ---------------------------------------------------------------------------
 
 @app.route("/api/messages", methods=["POST"])
+@limiter.limit("10 per minute")
 def send_message():
     """Called from the PUBLIC send-message page (no login) — anyone with
-    the link can post an anonymous message to a recipient."""
+    the link can post an anonymous message to a recipient.
+    Rate-limited to 10/minute per IP to prevent spam."""
     data = request.get_json(force=True)
     recipient_username = clean_username(data.get("recipient_username", ""))
     content = (data.get("content") or "").strip()
@@ -153,22 +208,21 @@ def send_message():
 
 
 @app.route("/api/messages/<username>", methods=["GET"])
+@require_owner
 def get_inbox(username):
-    """Owner's inbox — used by the Inbox screen. Hides reported messages."""
+    """Owner's inbox — requires valid X-Owner-Token that matches the username."""
+    if username != g.owner["username"]:
+        return jsonify({"error": "Forbidden."}), 403
+
     conn = get_conn()
     try:
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT user_id FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
-        if not user:
-            return jsonify({"error": "User not found."}), 404
-
         cur.execute(
             """SELECT message_id, content, is_replied, is_reported, created_at
                FROM messages
                WHERE recipient_id = %s AND is_reported = FALSE
                ORDER BY created_at DESC""",
-            (user["user_id"],),
+            (g.owner["user_id"],),
         )
         messages = [row_to_message(r) for r in cur.fetchall()]
         return jsonify({"messages": messages})
@@ -177,12 +231,18 @@ def get_inbox(username):
 
 
 @app.route("/api/messages/<int:message_id>/ignore", methods=["POST"])
+@require_owner
 def ignore_message(message_id):
-    """Ignoring just deletes the message — matches the current frontend
-    behavior (handleIgnore removes it from state entirely)."""
+    """Ignoring deletes the message. Verifies the message belongs to the token owner."""
     conn = get_conn()
     try:
-        cur = conn.cursor()
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            "SELECT recipient_id FROM messages WHERE message_id = %s", (message_id,)
+        )
+        msg = cur.fetchone()
+        if not msg or msg["recipient_id"] != g.owner["user_id"]:
+            return jsonify({"error": "Forbidden."}), 403
         cur.execute("DELETE FROM messages WHERE message_id = %s", (message_id,))
         conn.commit()
         return jsonify({"status": "ignored"})
@@ -191,11 +251,21 @@ def ignore_message(message_id):
 
 
 @app.route("/api/messages/<int:message_id>/report", methods=["POST"])
+@require_owner
 def report_message(message_id):
+    """Reports a message. Verifies the message belongs to the token owner."""
     conn = get_conn()
     try:
-        cur = conn.cursor()
-        cur.execute("UPDATE messages SET is_reported = TRUE WHERE message_id = %s", (message_id,))
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            "SELECT recipient_id FROM messages WHERE message_id = %s", (message_id,)
+        )
+        msg = cur.fetchone()
+        if not msg or msg["recipient_id"] != g.owner["user_id"]:
+            return jsonify({"error": "Forbidden."}), 403
+        cur.execute(
+            "UPDATE messages SET is_reported = TRUE WHERE message_id = %s", (message_id,)
+        )
         conn.commit()
         return jsonify({"status": "reported"})
     finally:
@@ -203,7 +273,9 @@ def report_message(message_id):
 
 
 @app.route("/api/messages/<int:message_id>/reply", methods=["POST"])
+@require_owner
 def reply_to_message(message_id):
+    """Posts a reply. Verifies the message belongs to the token owner."""
     data = request.get_json(force=True)
     reply_content = (data.get("reply_content") or "").strip()
     is_public = bool(data.get("is_public", True))
@@ -213,7 +285,14 @@ def reply_to_message(message_id):
 
     conn = get_conn()
     try:
-        cur = conn.cursor()
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            "SELECT recipient_id FROM messages WHERE message_id = %s", (message_id,)
+        )
+        msg = cur.fetchone()
+        if not msg or msg["recipient_id"] != g.owner["user_id"]:
+            return jsonify({"error": "Forbidden."}), 403
+
         cur.execute(
             "INSERT INTO replies (message_id, reply_content, is_public) VALUES (%s, %s, %s)",
             (message_id, reply_content, is_public),
@@ -232,15 +311,16 @@ def reply_to_message(message_id):
 # ---------------------------------------------------------------------------
 
 @app.route("/api/insights/<username>", methods=["GET"])
+@require_owner
 def get_insights(username):
+    """Insights for the owner. Requires valid X-Owner-Token matching the username."""
+    if username != g.owner["username"]:
+        return jsonify({"error": "Forbidden."}), 403
+
+    uid = g.owner["user_id"]
     conn = get_conn()
     try:
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT user_id FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
-        if not user:
-            return jsonify({"error": "User not found."}), 404
-        uid = user["user_id"]
 
         cur.execute("SELECT COUNT(*) AS total FROM messages WHERE recipient_id = %s", (uid,))
         total = cur.fetchone()["total"]

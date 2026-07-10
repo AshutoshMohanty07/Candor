@@ -1,0 +1,18 @@
+I need two security improvements to the Candor app. Please implement both:
+1. Real access control using a private owner token
+Right now, signup only creates a username — there's no actual secret proving who owns an account, and the username is public (it's the shareable link), so it can't be used as a credential.
+
+Add a new column to the users table: owner_token VARCHAR(64) UNIQUE NOT NULL
+Since the database currently only has test/placeholder data, drop and recreate the users, messages, and replies tables to add this column cleanly (DROP TABLE IF EXISTS replies; DROP TABLE IF EXISTS messages; DROP TABLE IF EXISTS users; then recreate all three with foreign keys as before)
+In the signup route (POST /api/users), generate a random token using secrets.token_urlsafe(32), save it alongside the new user, and return it in the response as owner_token (only returned once, at signup)
+Add a require_owner decorator/middleware that reads an X-Owner-Token header, looks up the user by that token, and rejects the request with 401 if no user matches
+Apply this to every route that exposes or modifies private data: getting the inbox, ignoring a message, reporting a message, replying to a message, and getting insights. For inbox/insights, also verify the URL's username actually matches the token's owner (403 if not). For ignore/report/reply, verify the message being acted on actually belongs to the token's owner (403 if not) — right now any message_id can be acted on by anyone, which needs to be fixed
+On the frontend, save the owner_token returned at signup into localStorage alongside the username, and send it as the X-Owner-Token header on every inbox/ignore/report/reply/insights request
+
+2. Rate limiting on the public send-message endpoint
+
+Install flask-limiter
+Set up a limiter keyed by IP address with a default of 200 requests/day and 50/hour globally
+Apply a stricter limit of 10 requests/minute specifically to the public POST /api/messages endpoint (the one anyone can hit without login) to prevent spam
+
+After making these changes, rebuild the frontend and restart the backend, then test: sign up as a new user, confirm the inbox loads, and confirm a reply/ignore/report works correctly for that user.
