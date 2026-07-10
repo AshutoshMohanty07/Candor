@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y curl && \
 WORKDIR /app
 COPY . .
 
-RUN npm install && npm run build
+RUN npm install --include=dev && npm run build
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
 WORKDIR /app/backend
