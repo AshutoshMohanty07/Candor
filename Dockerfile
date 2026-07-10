@@ -6,12 +6,13 @@ RUN apt-get update && apt-get install -y curl && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
+# Install pnpm — the project uses pnpm (pnpm-lock.yaml), not npm
+RUN npm install -g pnpm
+
 WORKDIR /app
 COPY . .
 
-ENV NODE_ENV=development
-RUN npm install && npm run build
-ENV NODE_ENV=production
+RUN pnpm install && pnpm run build
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
 WORKDIR /app/backend
