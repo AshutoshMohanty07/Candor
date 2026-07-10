@@ -62,11 +62,21 @@ const platforms = [
 ];
 
 export default function Share({ username }: { username: string }) {
-  const link = `candor.app/${username || "you"}`;
+  // Use the real origin so this works on any domain (local, Render, custom, etc.)
+  const shareUrl = `${window.location.origin}/${username || "you"}`;
   const [copied, setCopied] = useState(false);
   const [copiedPlatform, setCopiedPlatform] = useState("");
 
   const copyLink = () => {
+    navigator.clipboard.writeText(shareUrl).catch(() => {
+      // Fallback for browsers that block clipboard access
+      const el = document.createElement("textarea");
+      el.value = shareUrl;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -110,13 +120,13 @@ export default function Share({ username }: { username: string }) {
             className="rounded-2xl p-3"
             style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.12)" }}
           >
-            <QRCode value={link} />
+            <QRCode value={shareUrl} />
           </div>
 
           {/* Link text */}
           <div className="text-center">
             <div className="gradient-text font-extrabold" style={{ fontSize: 22, letterSpacing: "-0.5px" }}>
-              {link}
+              {shareUrl}
             </div>
             <p className="text-xs font-medium mt-1" style={{ color: "var(--muted-foreground)" }}>
               Scan or tap to send an anonymous question
