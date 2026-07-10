@@ -1,103 +1,394 @@
-# Candor — Anonymous Q&A App
+# Candor — Anonymous Q&A Platform
 
-Share a link. Friends send you anonymous messages. You reply publicly as a
-shareable card, or ignore/report. Built as a portfolio project to demonstrate
-end-to-end product + technical execution: UI design (Figma), frontend (React),
-backend (Flask), database design (MySQL), and deployment (Replit).
+> A full-stack anonymous Q&A platform that enables users to receive honest feedback through shareable public links while maintaining secure owner-only access to their inbox and replies.
 
-## How it's built
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python)
+![Flask](https://img.shields.io/badge/Flask-000000?logo=flask)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker)
+![Render](https://img.shields.io/badge/Render-Deployed-46E3B7)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-- **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS (UI generated in
-  Figma Make, then wired up to a real backend)
-- **Backend**: Python (Flask) REST API
-- **Database**: MySQL (hosted on Aiven's free tier)
-- **Routing**: `react-router-dom` — `/` is your own app (inbox, replies,
-  insights, settings); `/<username>` is the *public* page anyone can visit
-  to send you an anonymous message
-- **Deployment**: Single Replit project — Flask serves both the API and the
-  built React app, so the whole product lives at one URL
+---
 
-## Project structure
+## 🌐 Live Demo
+
+**Application:**  
+https://candor-h0aw.onrender.com/
+
+> **Note:** The application is hosted on Render's free tier. If it has been idle for some time, the first request may take approximately 30–50 seconds while the server wakes up.
+
+---
+
+## 📦 Repository
+
+https://github.com/AshutoshMohanty07/Candor
+
+---
+
+# Overview
+
+Candor is a modern anonymous messaging platform inspired by social feedback applications.
+
+Users create a personal public link and receive anonymous messages from friends, colleagues, or followers. Only the account owner can access incoming messages, reply to selected conversations, and view engagement analytics.
+
+The project was designed to demonstrate full-stack engineering, product thinking, backend architecture, secure API design, and deployment of a production-ready web application.
+
+---
+
+# The Problem
+
+Collecting honest feedback is difficult because people often hesitate to share opinions openly.
+
+Candor reduces that friction by allowing anyone to send anonymous messages while ensuring that only the intended recipient can access their inbox.
+
+---
+
+# Solution
+
+Candor provides:
+
+- Anonymous messaging
+- Shareable public profile links
+- Private owner-only inbox
+- Reply workflow
+- Insights dashboard
+- Rate limiting against spam
+- Secure token-based authentication
+- Responsive mobile-first interface
+
+---
+
+# Key Features
+
+## Anonymous Messaging
+
+- Public shareable profile
+- No sender account required
+- Anonymous submissions
+
+---
+
+## Secure Inbox
+
+Only the owner can:
+
+- Read messages
+- Reply
+- Delete messages
+- View analytics
+
+---
+
+## Insights Dashboard
+
+Track:
+
+- Messages received
+- Replies posted
+- Reply rate
+- Weekly activity
+
+---
+
+## Share Screen
+
+Quick sharing to:
+
+- WhatsApp
+- Instagram
+- X (Twitter)
+
+---
+
+## Security
+
+Implemented security measures include:
+
+- Private owner tokens
+- Username never used for authorization
+- Flask rate limiting
+- Protected API routes
+- Environment variable configuration
+- SQL foreign key constraints
+
+---
+
+# Screenshots
+
+## Onboarding
+
+![](assets/screenshots/onboarding-1.png)
+
+![](assets/screenshots/onboarding-2.png)
+
+![](assets/screenshots/onboarding-3.png)
+
+---
+
+## Username Setup
+
+![](assets/screenshots/username.png)
+
+---
+
+## Inbox
+
+![](assets/screenshots/inbox.png)
+
+---
+
+## Message Received
+
+![](assets/screenshots/inbox-messages.png)
+
+---
+
+## Insights
+
+![](assets/screenshots/insights.png)
+
+---
+
+## Settings
+
+![](assets/screenshots/settings.png)
+
+---
+
+## Message Sent
+
+![](assets/screenshots/message-sent.png)
+
+---
+
+# System Architecture
 
 ```
-candor_project/
-├── src/                    # React frontend
-│   ├── App.tsx             # Routing + top-level state
-│   ├── api.ts              # All backend API calls live here
-│   └── screens/            # Onboarding, Signup, Inbox, Reply, Share,
-│                           # Insights, Settings, SendMessage (public page)
-├── backend/
-│   ├── app.py              # Flask API + serves the built frontend
-│   ├── schema.sql           # MySQL table definitions — run this first
-│   ├── requirements.txt
-│   └── .env.example         # Copy to backend/.env and fill in your values
-├── package.json
-└── vite.config.ts
+                    Anonymous Visitor
+                            │
+                            ▼
+                 React + TypeScript (Vite)
+                            │
+                 REST API Requests
+                            │
+                            ▼
+                    Flask REST Backend
+                            │
+                Authentication Layer
+                            │
+                Owner Token Validation
+                            │
+                            ▼
+                  MySQL Database (Aiven)
+                            │
+                Users
+                Messages
+                Replies
 ```
 
-## 1. Set up the database (Aiven MySQL, free tier)
+---
 
-1. Create a free MySQL service at aiven.io
-2. From the service overview page, copy: host, port, user, password, database name
-3. Connect to it (Aiven gives you a connection command, or use any MySQL
-   client / the Aiven console's built-in query editor) and run everything
-   in `backend/schema.sql` once to create the tables
-4. Copy `backend/.env.example` to `backend/.env` and fill in the values from
-   step 2
+# Database Design
 
-## 2. Run the backend locally (optional, for testing before deploying)
+The application uses a normalized relational schema consisting of three tables.
+
+### Users
+
+Stores:
+
+- Username
+- Owner Token
+
+---
+
+### Messages
+
+Stores:
+
+- Anonymous message
+- Timestamp
+- Associated user
+
+---
+
+### Replies
+
+Stores:
+
+- Reply content
+- Associated message
+- Creation timestamp
+
+Foreign keys maintain referential integrity across the database.
+
+---
+
+# Tech Stack
+
+## Frontend
+
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+
+---
+
+## Backend
+
+- Python
+- Flask
+- Flask-CORS
+- Flask-Limiter
+- Gunicorn
+
+---
+
+## Database
+
+- MySQL
+- Aiven Cloud Database
+
+---
+
+## Deployment
+
+- Docker
+- Render
+- GitHub
+
+---
+
+## Development
+
+- Git
+- Replit
+- Figma
+
+---
+
+# Security Decisions
+
+Instead of authorizing users using public usernames, Candor generates a cryptographically secure owner token during account creation.
+
+Only requests containing the correct owner token can:
+
+- View inbox
+- Reply
+- Delete messages
+- Access analytics
+
+This prevents unauthorized users from accessing another user's data simply by guessing a username.
+
+Public endpoints are additionally protected using request rate limiting to reduce spam.
+
+---
+
+# Product Decisions
+
+Several product decisions were intentionally made during development:
+
+- Mobile-first responsive interface
+- Minimal onboarding flow
+- Anonymous-by-default experience
+- Lightweight backend architecture
+- Separate owner authentication from public identity
+- Cloud-hosted relational database
+- Production deployment using Docker
+
+---
+
+# Challenges
+
+During development several engineering challenges were solved, including:
+
+- Designing secure anonymous messaging
+- Building token-based authorization
+- Deploying React and Flask together
+- Configuring MySQL on Aiven Cloud
+- Dockerizing frontend and backend
+- Managing production environment variables
+- Integrating Render deployment
+
+---
+
+# Future Improvements
+
+Potential future enhancements include:
+
+- Push notifications
+- Email notifications
+- AI-based content moderation
+- User blocking
+- Message reactions
+- Public profile customization
+- Image attachments
+- Analytics improvements
+- Automated testing
+
+---
+
+# Local Development
+
+Clone the repository
+
+```bash
+git clone https://github.com/AshutoshMohanty07/Candor.git
+```
+
+Install dependencies
 
 ```bash
 cd backend
 pip install -r requirements.txt
-python app.py
 ```
-This starts the API at `http://localhost:8000`.
 
-## 3. Run the frontend locally
+Start backend
 
 ```bash
-npm install
-npm run dev
-```
-This starts the dev server (usually `http://localhost:5173`). Since the
-frontend and backend run on different ports locally, create a `.env` file
-in the project root with:
-```
-VITE_API_URL=http://localhost:8000
+python app.py
 ```
 
-## 4. Deploy on Replit (single live URL)
+Run frontend
 
-1. Import this repo into a new Replit project (Python template)
-2. In the Replit Shell, build the frontend once:
-   ```bash
-   npm install
-   npm run build
-   ```
-   This creates a `dist/` folder with the production frontend.
-3. Set your environment variables in Replit's **Secrets** tab (same values
-   as `backend/.env`) — do NOT commit your real `.env` file to GitHub.
-4. Run the backend:
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   python app.py
-   ```
-   Flask will serve both the API (`/api/*`) and the built React app (`/`)
-   from the same URL — that's your live product link.
-5. Whenever you change the frontend, re-run `npm run build` so Flask picks
-   up the new `dist/` files.
+```bash
+pnpm install
+pnpm dev
+```
 
-## What to say about this project in interviews
+---
 
-- **Product decisions**: why anonymous messaging needs a moderation flag
-  (`is_reported`) baked into the schema from day one, not bolted on later
-- **Growth loop**: the public `/<username>` page has zero friction (no
-  login) — that's deliberate, since friction on the sending side is the
-  #1 killer of virality in this app category
-- **Schema design**: normalized 3-table structure (`users`, `messages`,
-  `replies`) with foreign keys, rather than a single denormalized table
-- **Scope cuts made deliberately for an MVP**: localStorage-based session
-  instead of real auth, no rate limiting/spam protection yet, no push
-  notifications — all good "what I'd build next" talking points
+# Deployment
+
+The application is deployed using:
+
+- Docker
+- Render
+- MySQL (Aiven)
+
+Environment variables are managed securely using Render Secrets.
+
+---
+
+# Lessons Learned
+
+This project strengthened practical experience in:
+
+- REST API design
+- Authentication strategies
+- SQL schema design
+- Docker deployment
+- Cloud databases
+- Production debugging
+- Full-stack application architecture
+- Product thinking and feature prioritization
+
+---
+
+# License
+
+This project is licensed under the MIT License.
