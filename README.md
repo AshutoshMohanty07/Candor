@@ -13,18 +13,28 @@
 
 ---
 
-## 🌐 Live Demo
+# 🌐 Live Demo
 
-**Application:**  
+**Application**
+
 https://candor-h0aw.onrender.com/
 
-> **Note:** The application is hosted on Render's free tier. If it has been idle for some time, the first request may take approximately 30–50 seconds while the server wakes up.
+> **Note:** Hosted on Render's free tier. After periods of inactivity, the first request may take approximately **30–50 seconds** while the server wakes up.
 
 ---
 
-## 📦 Repository
+# 📦 Repository
 
 https://github.com/AshutoshMohanty07/Candor
+
+---
+
+# 📄 Documentation
+
+This repository also includes detailed product documentation created during development.
+
+- 📘 [Product Case Study](docs/Candor_Product_Case_Study.pdf)
+- 📋 [Product Requirements Document (PRD)](docs/Candor_PRD.pdf)
 
 ---
 
@@ -32,9 +42,22 @@ https://github.com/AshutoshMohanty07/Candor
 
 Candor is a modern anonymous messaging platform inspired by social feedback applications.
 
-Users create a personal public link and receive anonymous messages from friends, colleagues, or followers. Only the account owner can access incoming messages, reply to selected conversations, and view engagement analytics.
+Users create a personal public link where anyone can send anonymous messages without creating an account. Only the owner can access incoming messages, reply to selected conversations, and view engagement analytics.
 
-The project was designed to demonstrate full-stack engineering, product thinking, backend architecture, secure API design, and deployment of a production-ready web application.
+The project demonstrates full-stack application development, secure backend architecture, product thinking, REST API design, cloud deployment, and documentation.
+
+---
+
+# 🚀 Highlights
+
+- Full-stack React + Flask application
+- Secure owner token authentication
+- Cloud-hosted MySQL database
+- Dockerized deployment
+- Mobile-first responsive UI
+- RESTful API architecture
+- Anonymous messaging workflow
+- Product documentation included
 
 ---
 
@@ -42,7 +65,7 @@ The project was designed to demonstrate full-stack engineering, product thinking
 
 Collecting honest feedback is difficult because people often hesitate to share opinions openly.
 
-Candor reduces that friction by allowing anyone to send anonymous messages while ensuring that only the intended recipient can access their inbox.
+Candor reduces that friction by allowing anyone to send anonymous messages while ensuring only the intended recipient can access their inbox.
 
 ---
 
@@ -146,7 +169,7 @@ Implemented security measures include:
 
 ---
 
-## Insights
+## Insights Dashboard
 
 ![](assets/screenshots/insights.png)
 
@@ -158,7 +181,7 @@ Implemented security measures include:
 
 ---
 
-## Message Sent
+## Message Successfully Sent
 
 ![](assets/screenshots/message-sent.png)
 
@@ -166,27 +189,23 @@ Implemented security measures include:
 
 # System Architecture
 
-```
-                    Anonymous Visitor
-                            │
-                            ▼
-                 React + TypeScript (Vite)
-                            │
-                 REST API Requests
-                            │
-                            ▼
-                    Flask REST Backend
-                            │
-                Authentication Layer
-                            │
-                Owner Token Validation
-                            │
-                            ▼
-                  MySQL Database (Aiven)
-                            │
-                Users
-                Messages
-                Replies
+```text
+                 Anonymous Visitor
+                         │
+                         ▼
+            React + TypeScript (Vite)
+                         │
+                  REST API Requests
+                         │
+                         ▼
+                  Flask REST Backend
+                         │
+             Owner Token Authentication
+                         │
+                         ▼
+             MySQL Database (Aiven Cloud)
+                         │
+          Users • Messages • Replies
 ```
 
 ---
@@ -202,8 +221,6 @@ Stores:
 - Username
 - Owner Token
 
----
-
 ### Messages
 
 Stores:
@@ -211,8 +228,6 @@ Stores:
 - Anonymous message
 - Timestamp
 - Associated user
-
----
 
 ### Replies
 
@@ -236,8 +251,6 @@ Foreign keys maintain referential integrity across the database.
 - Tailwind CSS
 - React Router
 
----
-
 ## Backend
 
 - Python
@@ -246,14 +259,10 @@ Foreign keys maintain referential integrity across the database.
 - Flask-Limiter
 - Gunicorn
 
----
-
 ## Database
 
 - MySQL
 - Aiven Cloud Database
-
----
 
 ## Deployment
 
@@ -261,13 +270,28 @@ Foreign keys maintain referential integrity across the database.
 - Render
 - GitHub
 
----
-
 ## Development
 
 - Git
 - Replit
 - Figma
+
+---
+
+# Repository Structure
+
+```text
+Candor/
+├── assets/
+│   └── screenshots/
+├── backend/
+├── docs/
+│   ├── Candor_Product_Case_Study.pdf
+│   └── Candor_PRD.pdf
+├── src/
+├── README.md
+└── LICENSE
+```
 
 ---
 
@@ -302,7 +326,7 @@ Several product decisions were intentionally made during development:
 
 ---
 
-# Challenges
+# Engineering Challenges
 
 During development several engineering challenges were solved, including:
 
@@ -334,26 +358,22 @@ Potential future enhancements include:
 
 # Local Development
 
-Clone the repository
+Clone the repository:
 
 ```bash
 git clone https://github.com/AshutoshMohanty07/Candor.git
+cd Candor
 ```
 
-Install dependencies
+Backend:
 
 ```bash
 cd backend
 pip install -r requirements.txt
-```
-
-Start backend
-
-```bash
 python app.py
 ```
 
-Run frontend
+Frontend:
 
 ```bash
 pnpm install
@@ -386,6 +406,15 @@ This project strengthened practical experience in:
 - Production debugging
 - Full-stack application architecture
 - Product thinking and feature prioritization
+
+---
+
+# Author
+
+**Ashutosh Mohanty**
+
+- GitHub: https://github.com/AshutoshMohanty07
+- LinkedIn: https://www.linkedin.com/in/ashutoshmohanty07/
 
 ---
 
