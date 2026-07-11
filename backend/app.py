@@ -364,6 +364,30 @@ def get_insights(username):
 
 
 # ---------------------------------------------------------------------------
+# Routes — health check (keeps Render + Aiven MySQL awake via uptime monitor)
+# ---------------------------------------------------------------------------
+
+@app.route("/api/health", methods=["GET"])
+@limiter.exempt
+def health_check():
+    """Lightweight endpoint for external uptime monitors (e.g. UptimeRobot).
+    Runs a trivial real query so it keeps both Render and the Aiven MySQL
+    connection alive, not just the Flask process itself."""
+    try:
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT 1")
+            cur.fetchone()
+            return jsonify({"status": "ok"}), 200
+        finally:
+            conn.close()
+    except Exception as e:
+        # Don't leak internal error details publicly — just report unhealthy
+        return jsonify({"status": "error"}), 503
+
+
+# ---------------------------------------------------------------------------
 # Serve the built React app (production) — see README for how this is built
 # ---------------------------------------------------------------------------
 
