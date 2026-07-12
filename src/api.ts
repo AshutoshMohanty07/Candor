@@ -67,6 +67,9 @@ export const api = {
       body: JSON.stringify({ reply_content: replyContent, is_public: isPublic }),
     }),
 
+  deleteAccount: (username: string) =>
+    request<{ status: string }>(`/api/users/${username}`, { method: "DELETE" }),
+
   getInsights: (username: string) =>
     request<{
       total: number;

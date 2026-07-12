@@ -173,6 +173,25 @@ def create_user():
         conn.close()
 
 
+@app.route("/api/users/<username>", methods=["DELETE"])
+@require_owner
+def delete_user(username):
+    """Permanently deletes the owner's account. Requires a valid X-Owner-Token
+    matching the username. Messages and replies are removed automatically via
+    ON DELETE CASCADE foreign keys."""
+    if username != g.owner["username"]:
+        return jsonify({"error": "Forbidden."}), 403
+
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM users WHERE user_id = %s", (g.owner["user_id"],))
+        conn.commit()
+        return jsonify({"status": "deleted"}), 200
+    finally:
+        conn.close()
+
+
 # ---------------------------------------------------------------------------
 # Routes — messages (the anonymous Q&A core loop)
 # ---------------------------------------------------------------------------

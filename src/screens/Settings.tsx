@@ -1,7 +1,11 @@
 import { useState } from "react";
 import type { Screen } from "../App";
 
-type Props = { onNavigate?: (s: Screen) => void; username: string };
+type Props = {
+  onNavigate?: (s: Screen) => void;
+  username: string;
+  onDeleteAccount: () => Promise<void>;
+};
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
@@ -52,12 +56,12 @@ function SettingRow({ icon, label, sub, right }: { icon: string; label: string; 
   );
 }
 
-export default function Settings({ onNavigate: _onNavigate, username }: Props) {
+export default function Settings({ onNavigate, username, onDeleteAccount }: Props) {
   const [notifs, setNotifs] = useState(true);
   const [filter, setFilter] = useState(true);
   const [sound, setSound] = useState(false);
-  const [showBlocked, setShowBlocked] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Use the real origin so this works on any domain (local, Render, custom, etc.)
   const candorLink = `${window.location.origin}/${username || "you"}`;
@@ -74,6 +78,17 @@ export default function Settings({ onNavigate: _onNavigate, username }: Props) {
     });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("Are you sure? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await onDeleteAccount();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete account.");
+      setDeleting(false);
+    }
   };
 
   return (
@@ -167,38 +182,6 @@ export default function Settings({ onNavigate: _onNavigate, username }: Props) {
             sub="Auto-hide harmful messages"
             right={<Toggle checked={filter} onChange={() => setFilter(!filter)} />}
           />
-          <div style={{ height: 1, background: "var(--border)" }} />
-          <button
-            className="flex items-center gap-3 py-3.5 w-full text-left"
-            onClick={() => setShowBlocked(!showBlocked)}
-          >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-              style={{ background: "rgba(248,113,113,0.1)" }}
-            >
-              🚫
-            </div>
-            <div className="flex-1">
-              <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Block list</p>
-              <p className="text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>
-                Coming soon
-              </p>
-            </div>
-            <svg
-              width="16" height="16" viewBox="0 0 24 24" fill="none"
-              style={{ transform: showBlocked ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}
-            >
-              <path d="M9 18l6-6-6-6" stroke="#7c6fa8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-
-          {showBlocked && (
-            <div className="pb-3">
-              <p className="text-xs font-medium text-center py-3" style={{ color: "var(--muted-foreground)" }}>
-                Blocking isn't available yet — we're working on it.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* About */}
@@ -209,31 +192,55 @@ export default function Settings({ onNavigate: _onNavigate, username }: Props) {
           <p className="text-xs font-bold uppercase tracking-widest pt-3 pb-1" style={{ color: "var(--muted-foreground)" }}>
             About
           </p>
-          <SettingRow icon="📄" label="Privacy policy" right={
+          <button
+            className="flex items-center gap-3 py-3.5 w-full text-left"
+            onClick={() => onNavigate?.("privacy")}
+          >
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+              style={{ background: "rgba(168,85,247,0.1)" }}
+            >
+              📄
+            </div>
+            <p className="flex-1 font-semibold text-sm" style={{ color: "var(--foreground)" }}>Privacy policy</p>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="#7c6fa8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          } />
+          </button>
           <div style={{ height: 1, background: "var(--border)" }} />
-          <SettingRow icon="📋" label="Terms of service" right={
+          <button
+            className="flex items-center gap-3 py-3.5 w-full text-left"
+            onClick={() => onNavigate?.("terms")}
+          >
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+              style={{ background: "rgba(168,85,247,0.1)" }}
+            >
+              📋
+            </div>
+            <p className="flex-1 font-semibold text-sm" style={{ color: "var(--foreground)" }}>Terms of service</p>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="#7c6fa8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          } />
+          </button>
           <div style={{ height: 1, background: "var(--border)" }} />
           <SettingRow icon="ℹ️" label="Version 1.0.0" sub="Up to date" />
         </div>
 
         {/* Danger zone */}
         <button
+          onClick={handleDeleteAccount}
+          disabled={deleting}
           className="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-95"
           style={{
             background: "rgba(248,113,113,0.07)",
             border: "1px solid rgba(248,113,113,0.15)",
             color: "#f87171",
+            opacity: deleting ? 0.6 : 1,
+            cursor: deleting ? "not-allowed" : "pointer",
           }}
         >
-          Delete account
+          {deleting ? "Deleting…" : "Delete account"}
         </button>
       </div>
     </div>

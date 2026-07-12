@@ -7,6 +7,8 @@ import Reply from "./screens/Reply";
 import Share from "./screens/Share";
 import Insights from "./screens/Insights";
 import Settings from "./screens/Settings";
+import PrivacyPolicy from "./screens/PrivacyPolicy";
+import TermsOfService from "./screens/TermsOfService";
 import SendMessage from "./screens/SendMessage";
 import BottomNav from "./components/BottomNav";
 import { api, STORAGE_TOKEN_KEY, type ApiMessage } from "./api";
@@ -18,7 +20,9 @@ export type Screen =
   | "reply"
   | "share"
   | "insights"
-  | "settings";
+  | "settings"
+  | "privacy"
+  | "terms";
 
 // Message shape now comes straight from the API (see api.ts)
 export type Message = ApiMessage;
@@ -106,6 +110,15 @@ function OwnerApp() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    await api.deleteAccount(username);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_TOKEN_KEY);
+    setUsername("");
+    setMessages([]);
+    setScreen("onboarding");
+  };
+
   const handleReply = (msg: Message) => {
     setReplyMessage(msg);
     setScreen("reply");
@@ -158,7 +171,15 @@ function OwnerApp() {
       )}
       {screen === "share" && <Share username={username} />}
       {screen === "insights" && <Insights username={username} />}
-      {screen === "settings" && <Settings onNavigate={navigateTo} username={username} />}
+      {screen === "settings" && (
+        <Settings
+          onNavigate={navigateTo}
+          username={username}
+          onDeleteAccount={handleDeleteAccount}
+        />
+      )}
+      {screen === "privacy" && <PrivacyPolicy onBack={() => setScreen("settings")} />}
+      {screen === "terms" && <TermsOfService onBack={() => setScreen("settings")} />}
 
       {isMainApp && screen !== "reply" && (
         <BottomNav active={activeTab} onChange={handleTabChange} />
