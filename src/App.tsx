@@ -158,7 +158,7 @@ function OwnerApp() {
       )}
       {screen === "share" && <Share username={username} />}
       {screen === "insights" && <Insights username={username} />}
-      {screen === "settings" && <Settings onNavigate={navigateTo} />}
+      {screen === "settings" && <Settings onNavigate={navigateTo} username={username} />}
 
       {isMainApp && screen !== "reply" && (
         <BottomNav active={activeTab} onChange={handleTabChange} />

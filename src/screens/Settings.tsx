@@ -1,9 +1,7 @@
 import { useState } from "react";
 import type { Screen } from "../App";
 
-type Props = { onNavigate?: (s: Screen) => void };
-
-const blockedUsers = ["xoxo_anon", "mystery_sender", "ask.me.anything"];
+type Props = { onNavigate?: (s: Screen) => void; username: string };
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
@@ -54,14 +52,29 @@ function SettingRow({ icon, label, sub, right }: { icon: string; label: string; 
   );
 }
 
-export default function Settings({ onNavigate: _onNavigate }: Props) {
+export default function Settings({ onNavigate: _onNavigate, username }: Props) {
   const [notifs, setNotifs] = useState(true);
   const [filter, setFilter] = useState(true);
   const [sound, setSound] = useState(false);
-  const [blocked, setBlocked] = useState(blockedUsers);
   const [showBlocked, setShowBlocked] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const unblock = (name: string) => setBlocked((b) => b.filter((u) => u !== name));
+  // Use the real origin so this works on any domain (local, Render, custom, etc.)
+  const candorLink = `${window.location.origin}/${username || "you"}`;
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(candorLink).catch(() => {
+      // Fallback for browsers that block clipboard access
+      const el = document.createElement("textarea");
+      el.value = candorLink;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    });
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div
@@ -87,17 +100,34 @@ export default function Settings({ onNavigate: _onNavigate }: Props) {
           <p className="text-xs font-bold uppercase tracking-widest pt-3 pb-1" style={{ color: "var(--muted-foreground)" }}>
             Profile
           </p>
-          <SettingRow icon="✏️" label="Edit username" sub="candor.app/you" right={
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M9 18l6-6-6-6" stroke="#7c6fa8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          } />
+          <SettingRow
+            icon="✏️"
+            label="Edit username"
+            sub={`${window.location.host}/${username || "you"}`}
+            right={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="#7c6fa8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+          />
           <div style={{ height: 1, background: "var(--border)" }} />
-          <SettingRow icon="🔗" label="My Candor link" sub="Tap to copy" right={
+          <button className="flex items-center gap-3 py-3.5 w-full text-left" onClick={copyLink}>
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+              style={{ background: "rgba(168,85,247,0.1)" }}
+            >
+              🔗
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>My Candor link</p>
+              <p className="text-xs font-medium" style={{ color: copied ? "#4ade80" : "var(--muted-foreground)" }}>
+                {copied ? "✓ Copied to clipboard" : "Tap to copy"}
+              </p>
+            </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="#7c6fa8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          } />
+          </button>
         </div>
 
         {/* Notifications */}
@@ -151,7 +181,7 @@ export default function Settings({ onNavigate: _onNavigate }: Props) {
             <div className="flex-1">
               <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Block list</p>
               <p className="text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>
-                {blocked.length} blocked
+                Coming soon
               </p>
             </div>
             <svg
@@ -163,36 +193,10 @@ export default function Settings({ onNavigate: _onNavigate }: Props) {
           </button>
 
           {showBlocked && (
-            <div className="pb-3 flex flex-col gap-2">
-              {blocked.length === 0 ? (
-                <p className="text-xs font-medium text-center py-3" style={{ color: "var(--muted-foreground)" }}>
-                  No blocked users
-                </p>
-              ) : (
-                blocked.map((name) => (
-                  <div
-                    key={name}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl"
-                    style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.08)" }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full text-xs flex items-center justify-center" style={{ background: "var(--muted)" }}>
-                        👤
-                      </div>
-                      <span className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
-                        {name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => unblock(name)}
-                      className="text-xs font-bold px-2.5 py-1 rounded-lg"
-                      style={{ background: "rgba(168,85,247,0.12)", color: "#a855f7" }}
-                    >
-                      Unblock
-                    </button>
-                  </div>
-                ))
-              )}
+            <div className="pb-3">
+              <p className="text-xs font-medium text-center py-3" style={{ color: "var(--muted-foreground)" }}>
+                Blocking isn't available yet — we're working on it.
+              </p>
             </div>
           )}
         </div>
